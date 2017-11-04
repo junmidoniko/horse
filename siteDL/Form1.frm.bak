@@ -901,252 +901,6 @@ Private Function getHtmlFile() As String
     
 End Function
 
-Private Sub getNankanCmpiList()
-    Dim str As String
-    Dim aYear As Integer
-    Dim aDay As Integer
-    Dim aRace As Integer
-    Dim aUma As Integer
-    Dim aGatu As String
-    Dim aNiti As String
-    Dim aYmd As String
-    Dim prt As String
-    Dim dbg As String
-    Dim timenow As String
-    Dim str2 As String
-    
-    Dim fnum As Integer
-    fnum = FreeFile()
-    
-    timenow = Format$(Now, "hh:mm:ss")
-    
-'    Open "c:\temp\daily\nankan-" & areaY.Text & areaMD(0).Text & areaMD(1).Text & "-" & Format$(Now, "yyyymmddhhmmss") & ".txt" For Output As #fnum
-    
-    Me.Caption = "start"
-    Me.Refresh
-    '指定のURLを表示
-    myURL = "http://p.nikkansports.com/goku-uma/member/races/past_list_nankan.zpl"
-    
-    ie.Navigate2 myURL
-
-    Do While ie.Busy = True Or ie.ReadyState <> 4
-        DoEvents
-    Loop
-    str = getHTMLString(ie)
-
-    Me.Caption = "comp"
-    Me.Refresh
-    
-    '年のURLを取得する
-    If str = "" Then
-        GoTo exit_here
-    End If
-    gStr = str
-    Call getYear(1)
-   
-    '年ループ   gYear gUrlYear
-    For aYear = 0 To UBound(gYear)
-        If gYear(aYear) = areaY.Text Or areaY.Text = "" Then
-            '指定の年サイトに移動
-            myURL = gUrlYear(aYear)
-            
-            Me.Caption = "start"
-            Me.Refresh
-            ie.Navigate2 myURL
-        
-            Do While ie.Busy = True Or ie.ReadyState <> 4
-                DoEvents
-            Loop
-            str = getHTMLString(ie)
-            
-            Me.Caption = "comp"
-            Me.Refresh
-            
-            'すべての日付のURLを取得する
-            If str = "" Then
-                GoTo exit_here
-            End If
-            gStr = str
-            Call getDay(1)
-            
-            '日付ループ gDay gPosDay
-            For aDay = 0 To UBound(gDay)
-                If (gDayFmt(aDay) >= areaMD(0).Text And gDayFmt(aDay) <= areaMD(1).Text) Or ("" = areaMD(0).Text And "" = areaMD(1).Text) Then
-                    aGatu = Mid$(gDay(aDay), 1, InStr(gDay(aDay), "月") - 1)
-                    aNiti = Mid$(gDay(aDay), InStr(gDay(aDay), "月") + 1)
-                    aNiti = Left$(aNiti, Len(aNiti) - 1)
-                    aYmd = gYear(aYear) & Format$(aGatu, "00") & Format$(aNiti, "00")
-                    'If Format$(Now, "yyyymmdd") > aYmd Then
-                        '任意の日付
-                        
-                        Me.Caption = "start"
-                        Me.Refresh
-                        
-                        myURL = gUrlDay(aDay)
-                        ie.Navigate2 myURL
-'                        ie.Visible = True    'IE を表示
-                        Do While ie.Busy = True Or ie.ReadyState <> 4
-                            DoEvents
-                        Loop
-                         
-                        Me.Caption = "comp"
-                        Me.Refresh
-                         
-                        '全レースのURLを取得する
-                        str = getHTMLString(ie)
-                        If str = "" Then
-                            GoTo exit_here
-                        End If
-                        gStr = str
-                        Call getRaces
-                         
-                        'コンピ指数
-                        Me.Caption = "start"
-                        Me.Refresh
-                        
-                        myURL = gCmpDay(0)
-                        ie.Navigate2 myURL
-'                        ie.Visible = True    'IE を表示
-                        Do While ie.Busy = True Or ie.ReadyState <> 4
-                            DoEvents
-                        Loop
-                         
-                        Me.Caption = "comp"
-                        Me.Refresh
-                        
-                        'コンピ指数 ファイル保存 gCmpDay
-                        str = getHTMLString(ie)
-                        If str = "" Then
-                            GoTo exit_here
-                        End If
-                        gStr = str
-                        
-                str2 = Replace(str, vbLf, vbCr & vbLf)
-                ff = App.Path & "\" & gYear(aYear) & gDayFmt(aDay) & gPosDay(aDay)
-                Call FilePutContents(ff & ".txt", str2, "utf-8")
-                        
-                        
-'                        'レースループ
-'                        For aRace = 0 To UBound(gDenmaRace)
-'        '                    myURL = gUrlDay(aDay)
-'        '                    ie.Navigate2 myURL
-'        '                    ie.Visible = True    'IE を表示
-'        '                    Do While ie.Busy = True Or ie.ReadyState <> 4
-'        '                        DoEvents
-'        '                    Loop
-'
-'                            '出走表
-'                            myURL = gDenmaRace(aRace)
-'
-'                            Me.Caption = "start"
-'                            Me.Refresh
-'
-'                            If chkDL.Value = 0 Then
-'                                ie.Navigate2 myURL
-'                            Else
-'                                ret = URLDownloadToFile(0, myURL, SaveFileName, 0, 0)
-'                                DoEvents
-'                            End If
-'
-'                            If chkDL.Value = 0 Then
-'                                Do While ie.Busy = True Or ie.ReadyState <> 4
-'                                    DoEvents
-'                                Loop
-'                                str = getHTMLString(ie)
-'                            Else
-'                                Call TextCodeChg(SaveFileName)
-'                                str = getHtmlFile
-'                            End If
-'
-'                            Me.Caption = "comp"
-'                            Me.Refresh
-'
-''''                            '出走表 すべての馬の馬番と馬名を取得する gBamei gUmaban
-''''                            If str = "" Then
-''''                                GoTo exit_here
-''''                            End If
-''''                            gStr = str
-''''                            Call getRunTable
-''''
-''''        '                    myURL = gUrlDay(aDay)
-''''        '                    ie.Navigate2 myURL
-''''        '                    ie.Visible = True    'IE を表示
-''''        '                    Do While ie.Busy = True Or ie.ReadyState <> 4
-''''        '                        DoEvents
-''''        '                    Loop
-''''
-''''
-''''                            '年月日(gYear(aYear) & gDay(aDay))、開催場所(gPosDay(aDay))、レース番号(gRace(aRace))、馬番、馬名(gBamei gUmaban)をファイルに出力する
-''''                            Debug.Print gYear(aYear) & "," & gDay(aDay) & "," & gRace(aRace)
-''''                            For aUma = 0 To UBound(gUmaban)
-''''                                'Debug.Print gUmaban(aUma) & "," & gBamei(aUma)
-''''
-''''                                prt = "1," & gYear(aYear) & "," & gDay(aDay) & "," & gDayFmt(aDay) & "," & gPosDayCd(aDay) & "," & gPosDayDbCd(aDay) & "," & gRace(aRace) & "," & gUmaban(aUma) & "," & gBamei(aUma) & "," & gCmp(aUma)
-''''                                Debug.Print prt
-''''                                Print #fnum, prt
-''''                            Next aUma
-''''
-''''                            '結果
-''''                            If Format$(Now, "yyyymmdd") > aYmd Then
-''''                                If UBound(gResRace) >= aRace Then
-''''                                    myURL = gResRace(aRace)
-''''
-''''                                    Me.Caption = "start"
-''''                                    Me.Refresh
-''''
-''''                                    If chkDL.Value = 0 Then
-''''                                        ie.Navigate2 myURL
-''''                                    Else
-''''                                        ret = URLDownloadToFile(0, myURL, SaveFileName, 0, 0)
-''''                                        DoEvents
-''''                                    End If
-''''
-''''                                    If chkDL.Value = 0 Then
-''''                                        Do While ie.Busy = True Or ie.ReadyState <> 4
-''''                                            DoEvents
-''''                                        Loop
-''''                                        str = getHTMLString(ie)
-''''                                    Else
-''''                                        Call TextCodeChg(SaveFileName)
-''''                                        str = getHtmlFile
-''''                                    End If
-''''
-''''                                    Me.Caption = "comp"
-''''                                    Me.Refresh
-''''
-''''                                    '結果 とりあえず、複勝のみ gFukuMny gFukuNum
-''''                                    If str = "" Then
-''''                                        GoTo exit_here
-''''                                    End If
-''''                                    gStr = str
-''''                                    Call getRes
-''''
-''''                                    '結果(gFukuMny gFukuNum)をファイルに出力する
-''''                                    For aUma = 0 To UBound(gFukuNum)
-''''                                        Debug.Print gFukuNum(aUma) & "," & gFukuMny(aUma)
-''''                                        prt = "2," & gYear(aYear) & "," & gDay(aDay) & "," & gDayFmt(aDay) & "," & gPosDayCd(aDay) & "," & gPosDayDbCd(aDay) & "," & gRace(aRace) & "," & gFukuNum(aUma) & "," & gFukuMny(aUma)
-''''                                        Debug.Print prt
-''''                                        Print #fnum, prt
-''''                                    Next aUma
-''''                                End If
-''''                            End If
-''''
-''''                            prt = prt
-'                        Next aRace
-                    'End If
-                End If
-            Next aDay
-        End If
-    Next aYear
-    
-exit_here:
-'    Close #fnum
-    
-    Debug.Print "start:" & timenow
-    Debug.Print "end  :" & Format$(Now, "hh:mm:ss")
-
-End Sub
-
 Private Sub old_chuuou()
     Dim dd() As String
   Dim Stream As Object
@@ -6537,244 +6291,243 @@ Private Sub Command6_Click()
 End Sub
 
 Private Sub Command7_Click()
-    Call getNankanCmpiList
     
-'    Dim str As String
-'    Dim aYear As Integer
-'    Dim aDay As Integer
-'    Dim aRace As Integer
-'    Dim aUma As Integer
-'    Dim aGatu As String
-'    Dim aNiti As String
-'    Dim aYmd As String
-'    Dim prt As String
-'    Dim dbg As String
-'    Dim timenow As String
-'
-'    Dim fnum As Integer
-'    fnum = FreeFile()
-'
-'    timenow = Format$(Now, "hh:mm:ss")
-'
-'    Open "c:\temp\daily\nankan-" & areaY.Text & areaMD(0).Text & areaMD(1).Text & "-" & Format$(Now, "yyyymmddhhmmss") & ".txt" For Output As #fnum
-'
-'    Me.Caption = "start"
-'    Me.Refresh
-'    '指定のURLを表示
-'    myURL = "http://p.nikkansports.com/goku-uma/member/races/past_list_nankan.zpl"
-'
-'    ie.Navigate2 myURL
-'
-'    Do While ie.Busy = True Or ie.ReadyState <> 4
-'        DoEvents
-'    Loop
-'    str = getHTMLString(ie)
-'
-'    Me.Caption = "comp"
-'    Me.Refresh
-'
-'    '年のURLを取得する
-'    If str = "" Then
-'        GoTo exit_here
-'    End If
-'    gStr = str
-'    Call getYear(1)
-'
-'    '年ループ   gYear gUrlYear
-'    For aYear = 0 To UBound(gYear)
-'        If gYear(aYear) = areaY.Text Or areaY.Text = "" Then
-'            '指定の年サイトに移動
-'            myURL = gUrlYear(aYear)
-'
-'            Me.Caption = "start"
-'            Me.Refresh
-'            ie.Navigate2 myURL
-'
-'            Do While ie.Busy = True Or ie.ReadyState <> 4
-'                DoEvents
-'            Loop
-'            str = getHTMLString(ie)
-'
-'            Me.Caption = "comp"
-'            Me.Refresh
-'
-'            'すべての日付のURLを取得する
-'            If str = "" Then
-'                GoTo exit_here
-'            End If
-'            gStr = str
-'            Call getDay(1)
-'
-'            '日付ループ gDay gPosDay
-'            For aDay = 0 To UBound(gDay)
-'                If (gDayFmt(aDay) >= areaMD(0).Text And gDayFmt(aDay) <= areaMD(1).Text) Or ("" = areaMD(0).Text And "" = areaMD(1).Text) Then
-'                    aGatu = Mid$(gDay(aDay), 1, InStr(gDay(aDay), "月") - 1)
-'                    aNiti = Mid$(gDay(aDay), InStr(gDay(aDay), "月") + 1)
-'                    aNiti = Left$(aNiti, Len(aNiti) - 1)
-'                    aYmd = gYear(aYear) & Format$(aGatu, "00") & Format$(aNiti, "00")
-'                    'If Format$(Now, "yyyymmdd") > aYmd Then
-'                        '任意の日付
-'
-'                        Me.Caption = "start"
-'                        Me.Refresh
-'
-'                        myURL = gUrlDay(aDay)
-'                        ie.Navigate2 myURL
-''                        ie.Visible = True    'IE を表示
-'                        Do While ie.Busy = True Or ie.ReadyState <> 4
-'                            DoEvents
-'                        Loop
-'
-'                        Me.Caption = "comp"
-'                        Me.Refresh
-'
-'                        '全レースのURLを取得する
-'                        str = getHTMLString(ie)
-'                        If str = "" Then
-'                            GoTo exit_here
-'                        End If
-'                        gStr = str
-'                        Call getRaces
-'
-'                        'コンピ指数
-'                        Me.Caption = "start"
-'                        Me.Refresh
-'
-'                        myURL = gCmpDay(0)
-'                        ie.Navigate2 myURL
-''                        ie.Visible = True    'IE を表示
-'                        Do While ie.Busy = True Or ie.ReadyState <> 4
-'                            DoEvents
-'                        Loop
-'
-'                        Me.Caption = "comp"
-'                        Me.Refresh
-'
-'                        'コンピ指数 ファイル保存 gCmpDay
-'                        str = getHTMLString(ie)
-'                        If str = "" Then
-'                            GoTo exit_here
-'                        End If
-'                        gStr = str
-'
-'                        'レースループ
-'                        For aRace = 0 To UBound(gDenmaRace)
-'        '                    myURL = gUrlDay(aDay)
-'        '                    ie.Navigate2 myURL
-'        '                    ie.Visible = True    'IE を表示
-'        '                    Do While ie.Busy = True Or ie.ReadyState <> 4
-'        '                        DoEvents
-'        '                    Loop
-'
-'                            '出走表
-'                            myURL = gDenmaRace(aRace)
-'
-'                            Me.Caption = "start"
-'                            Me.Refresh
-'
-'                            If chkDL.Value = 0 Then
-'                                ie.Navigate2 myURL
-'                            Else
-'                                ret = URLDownloadToFile(0, myURL, SaveFileName, 0, 0)
-'                                DoEvents
-'                            End If
-'
-'                            If chkDL.Value = 0 Then
-'                                Do While ie.Busy = True Or ie.ReadyState <> 4
-'                                    DoEvents
-'                                Loop
-'                                str = getHTMLString(ie)
-'                            Else
-'                                Call TextCodeChg(SaveFileName)
-'                                str = getHtmlFile
-'                            End If
-'
-'                            Me.Caption = "comp"
-'                            Me.Refresh
-'
-'                            '出走表 すべての馬の馬番と馬名を取得する gBamei gUmaban
-'                            If str = "" Then
-'                                GoTo exit_here
-'                            End If
-'                            gStr = str
-'                            Call getRunTable
-'
-'        '                    myURL = gUrlDay(aDay)
-'        '                    ie.Navigate2 myURL
-'        '                    ie.Visible = True    'IE を表示
-'        '                    Do While ie.Busy = True Or ie.ReadyState <> 4
-'        '                        DoEvents
-'        '                    Loop
-'
-'
-'                            '年月日(gYear(aYear) & gDay(aDay))、開催場所(gPosDay(aDay))、レース番号(gRace(aRace))、馬番、馬名(gBamei gUmaban)をファイルに出力する
-'                            Debug.Print gYear(aYear) & "," & gDay(aDay) & "," & gRace(aRace)
-'                            For aUma = 0 To UBound(gUmaban)
-'                                'Debug.Print gUmaban(aUma) & "," & gBamei(aUma)
-'
-'                                prt = "1," & gYear(aYear) & "," & gDay(aDay) & "," & gDayFmt(aDay) & "," & gPosDayCd(aDay) & "," & gPosDayDbCd(aDay) & "," & gRace(aRace) & "," & gUmaban(aUma) & "," & gBamei(aUma) & "," & gCmp(aUma)
-'                                Debug.Print prt
-'                                Print #fnum, prt
-'                            Next aUma
-'
-'                            '結果
-'                            If Format$(Now, "yyyymmdd") > aYmd Then
-'                                If UBound(gResRace) >= aRace Then
-'                                    myURL = gResRace(aRace)
-'
-'                                    Me.Caption = "start"
-'                                    Me.Refresh
-'
-'                                    If chkDL.Value = 0 Then
-'                                        ie.Navigate2 myURL
-'                                    Else
-'                                        ret = URLDownloadToFile(0, myURL, SaveFileName, 0, 0)
-'                                        DoEvents
-'                                    End If
-'
-'                                    If chkDL.Value = 0 Then
-'                                        Do While ie.Busy = True Or ie.ReadyState <> 4
-'                                            DoEvents
-'                                        Loop
-'                                        str = getHTMLString(ie)
-'                                    Else
-'                                        Call TextCodeChg(SaveFileName)
-'                                        str = getHtmlFile
-'                                    End If
-'
-'                                    Me.Caption = "comp"
-'                                    Me.Refresh
-'
-'                                    '結果 とりあえず、複勝のみ gFukuMny gFukuNum
-'                                    If str = "" Then
-'                                        GoTo exit_here
-'                                    End If
-'                                    gStr = str
-'                                    Call getRes
-'
-'                                    '結果(gFukuMny gFukuNum)をファイルに出力する
-'                                    For aUma = 0 To UBound(gFukuNum)
-'                                        Debug.Print gFukuNum(aUma) & "," & gFukuMny(aUma)
-'                                        prt = "2," & gYear(aYear) & "," & gDay(aDay) & "," & gDayFmt(aDay) & "," & gPosDayCd(aDay) & "," & gPosDayDbCd(aDay) & "," & gRace(aRace) & "," & gFukuNum(aUma) & "," & gFukuMny(aUma)
-'                                        Debug.Print prt
-'                                        Print #fnum, prt
-'                                    Next aUma
-'                                End If
-'                            End If
-'
-'                            prt = prt
-'                        Next aRace
-'                    'End If
-'                End If
-'            Next aDay
-'        End If
-'    Next aYear
-'
-'exit_here:
-'    Close #fnum
-'
-'    Debug.Print "start:" & timenow
-'    Debug.Print "end  :" & Format$(Now, "hh:mm:ss")
+    Dim str As String
+    Dim aYear As Integer
+    Dim aDay As Integer
+    Dim aRace As Integer
+    Dim aUma As Integer
+    Dim aGatu As String
+    Dim aNiti As String
+    Dim aYmd As String
+    Dim prt As String
+    Dim dbg As String
+    Dim timenow As String
+    
+    Dim fnum As Integer
+    fnum = FreeFile()
+    
+    timenow = Format$(Now, "hh:mm:ss")
+    
+    Open "c:\temp\daily\nankan-" & areaY.Text & areaMD(0).Text & areaMD(1).Text & "-" & Format$(Now, "yyyymmddhhmmss") & ".txt" For Output As #fnum
+    
+    Me.Caption = "start"
+    Me.Refresh
+    '指定のURLを表示
+    myURL = "http://p.nikkansports.com/goku-uma/member/races/past_list_nankan.zpl"
+    
+    ie.Navigate2 myURL
+
+    Do While ie.Busy = True Or ie.ReadyState <> 4
+        DoEvents
+    Loop
+    str = getHTMLString(ie)
+
+    Me.Caption = "comp"
+    Me.Refresh
+    
+    '年のURLを取得する
+    If str = "" Then
+        GoTo exit_here
+    End If
+    gStr = str
+    Call getYear(1)
+   
+    '年ループ   gYear gUrlYear
+    For aYear = 0 To UBound(gYear)
+        If gYear(aYear) = areaY.Text Or areaY.Text = "" Then
+            '指定の年サイトに移動
+            myURL = gUrlYear(aYear)
+            
+            Me.Caption = "start"
+            Me.Refresh
+            ie.Navigate2 myURL
+        
+            Do While ie.Busy = True Or ie.ReadyState <> 4
+                DoEvents
+            Loop
+            str = getHTMLString(ie)
+            
+            Me.Caption = "comp"
+            Me.Refresh
+            
+            'すべての日付のURLを取得する
+            If str = "" Then
+                GoTo exit_here
+            End If
+            gStr = str
+            Call getDay(1)
+            
+            '日付ループ gDay gPosDay
+            For aDay = 0 To UBound(gDay)
+                If (gDayFmt(aDay) >= areaMD(0).Text And gDayFmt(aDay) <= areaMD(1).Text) Or ("" = areaMD(0).Text And "" = areaMD(1).Text) Then
+                    aGatu = Mid$(gDay(aDay), 1, InStr(gDay(aDay), "月") - 1)
+                    aNiti = Mid$(gDay(aDay), InStr(gDay(aDay), "月") + 1)
+                    aNiti = Left$(aNiti, Len(aNiti) - 1)
+                    aYmd = gYear(aYear) & Format$(aGatu, "00") & Format$(aNiti, "00")
+                    'If Format$(Now, "yyyymmdd") > aYmd Then
+                        '任意の日付
+                        
+                        Me.Caption = "start"
+                        Me.Refresh
+                        
+                        myURL = gUrlDay(aDay)
+                        ie.Navigate2 myURL
+'                        ie.Visible = True    'IE を表示
+                        Do While ie.Busy = True Or ie.ReadyState <> 4
+                            DoEvents
+                        Loop
+                         
+                        Me.Caption = "comp"
+                        Me.Refresh
+                         
+                        '全レースのURLを取得する
+                        str = getHTMLString(ie)
+                        If str = "" Then
+                            GoTo exit_here
+                        End If
+                        gStr = str
+                        Call getRaces
+                         
+                        'コンピ指数
+                        Me.Caption = "start"
+                        Me.Refresh
+                        
+                        myURL = gCmpDay(0)
+                        ie.Navigate2 myURL
+'                        ie.Visible = True    'IE を表示
+                        Do While ie.Busy = True Or ie.ReadyState <> 4
+                            DoEvents
+                        Loop
+                         
+                        Me.Caption = "comp"
+                        Me.Refresh
+                        
+                        'コンピ指数 ファイル保存 gCmpDay
+                        str = getHTMLString(ie)
+                        If str = "" Then
+                            GoTo exit_here
+                        End If
+                        gStr = str
+                        
+                        'レースループ
+                        For aRace = 0 To UBound(gDenmaRace)
+        '                    myURL = gUrlDay(aDay)
+        '                    ie.Navigate2 myURL
+        '                    ie.Visible = True    'IE を表示
+        '                    Do While ie.Busy = True Or ie.ReadyState <> 4
+        '                        DoEvents
+        '                    Loop
+                        
+                            '出走表
+                            myURL = gDenmaRace(aRace)
+                            
+                            Me.Caption = "start"
+                            Me.Refresh
+                            
+                            If chkDL.Value = 0 Then
+                                ie.Navigate2 myURL
+                            Else
+                                ret = URLDownloadToFile(0, myURL, SaveFileName, 0, 0)
+                                DoEvents
+                            End If
+                            
+                            If chkDL.Value = 0 Then
+                                Do While ie.Busy = True Or ie.ReadyState <> 4
+                                    DoEvents
+                                Loop
+                                str = getHTMLString(ie)
+                            Else
+                                Call TextCodeChg(SaveFileName)
+                                str = getHtmlFile
+                            End If
+                            
+                            Me.Caption = "comp"
+                            Me.Refresh
+                            
+                            '出走表 すべての馬の馬番と馬名を取得する gBamei gUmaban
+                            If str = "" Then
+                                GoTo exit_here
+                            End If
+                            gStr = str
+                            Call getRunTable
+                            
+        '                    myURL = gUrlDay(aDay)
+        '                    ie.Navigate2 myURL
+        '                    ie.Visible = True    'IE を表示
+        '                    Do While ie.Busy = True Or ie.ReadyState <> 4
+        '                        DoEvents
+        '                    Loop
+                            
+                                
+                            '年月日(gYear(aYear) & gDay(aDay))、開催場所(gPosDay(aDay))、レース番号(gRace(aRace))、馬番、馬名(gBamei gUmaban)をファイルに出力する
+                            Debug.Print gYear(aYear) & "," & gDay(aDay) & "," & gRace(aRace)
+                            For aUma = 0 To UBound(gUmaban)
+                                'Debug.Print gUmaban(aUma) & "," & gBamei(aUma)
+                                
+                                prt = "1," & gYear(aYear) & "," & gDay(aDay) & "," & gDayFmt(aDay) & "," & gPosDayCd(aDay) & "," & gPosDayDbCd(aDay) & "," & gRace(aRace) & "," & gUmaban(aUma) & "," & gBamei(aUma) & "," & gCmp(aUma)
+                                Debug.Print prt
+                                Print #fnum, prt
+                            Next aUma
+                        
+                            '結果
+                            If Format$(Now, "yyyymmdd") > aYmd Then
+                                If UBound(gResRace) >= aRace Then
+                                    myURL = gResRace(aRace)
+                                    
+                                    Me.Caption = "start"
+                                    Me.Refresh
+                                    
+                                    If chkDL.Value = 0 Then
+                                        ie.Navigate2 myURL
+                                    Else
+                                        ret = URLDownloadToFile(0, myURL, SaveFileName, 0, 0)
+                                        DoEvents
+                                    End If
+                                
+                                    If chkDL.Value = 0 Then
+                                        Do While ie.Busy = True Or ie.ReadyState <> 4
+                                            DoEvents
+                                        Loop
+                                        str = getHTMLString(ie)
+                                    Else
+                                        Call TextCodeChg(SaveFileName)
+                                        str = getHtmlFile
+                                    End If
+                                     
+                                    Me.Caption = "comp"
+                                    Me.Refresh
+                                    
+                                    '結果 とりあえず、複勝のみ gFukuMny gFukuNum
+                                    If str = "" Then
+                                        GoTo exit_here
+                                    End If
+                                    gStr = str
+                                    Call getRes
+                                    
+                                    '結果(gFukuMny gFukuNum)をファイルに出力する
+                                    For aUma = 0 To UBound(gFukuNum)
+                                        Debug.Print gFukuNum(aUma) & "," & gFukuMny(aUma)
+                                        prt = "2," & gYear(aYear) & "," & gDay(aDay) & "," & gDayFmt(aDay) & "," & gPosDayCd(aDay) & "," & gPosDayDbCd(aDay) & "," & gRace(aRace) & "," & gFukuNum(aUma) & "," & gFukuMny(aUma)
+                                        Debug.Print prt
+                                        Print #fnum, prt
+                                    Next aUma
+                                End If
+                            End If
+                            
+                            prt = prt
+                        Next aRace
+                    'End If
+                End If
+            Next aDay
+        End If
+    Next aYear
+    
+exit_here:
+    Close #fnum
+    
+    Debug.Print "start:" & timenow
+    Debug.Print "end  :" & Format$(Now, "hh:mm:ss")
     
 End Sub
 
