@@ -1175,7 +1175,7 @@ Private Sub Form_Load()
     '使用期限チェック
     Dim nowD As String
     nowD = Format$(Now, "yyyymmdd")
-    If nowD > "20171204" Then                   '20170403
+    If nowD > "20190101" Then                   '20170403
         MsgBox "使用期限が切れました。ホームページから最新版をダウンロードしてください。"
         End
     End If
