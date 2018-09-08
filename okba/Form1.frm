@@ -6882,7 +6882,7 @@ Private Sub Form_Load()
 '    Else
 '        MsgBox GC_FAIL_MAIL
 '        End
-'    End If
+'    End If a
     
     If CreateObject("NonCodeVb6.NonCodeClass") Is Nothing Then
         If Len(Dir("NonCodeVb6.dll")) <> 0 Then
