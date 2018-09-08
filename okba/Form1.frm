@@ -35,7 +35,6 @@ Begin VB.Form Form1
       Left            =   4200
       TabIndex        =   177
       Top             =   2760
-      Visible         =   0   'False
       Width           =   5295
    End
    Begin VB.CommandButton Command29 
@@ -66,6 +65,7 @@ Begin VB.Form Form1
       Style           =   1  'ｸﾞﾗﾌｨｯｸｽ
       TabIndex        =   175
       Top             =   3360
+      Visible         =   0   'False
       Width           =   375
    End
    Begin VB.CommandButton Command28 
@@ -6903,7 +6903,7 @@ Private Sub Form_Load()
     
     Dim nowD As String
     nowD = Format$(Now, "yyyymmdd")
-    If nowD > "20180801" Then                   '20170403
+    If nowD > "20190101" Then                   '20170403
         MsgBox "最新バージョンをホームページからダウンロードしてください。"
         End
     End If
